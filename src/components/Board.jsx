@@ -51,6 +51,19 @@ function Board() {
     });
     setTasks(updatedTasks);
   }
+  function editTask(taskId, newTitle) {
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          title: newTitle,
+        };
+      }
+      return task;
+    });
+    setTasks(updatedTasks);
+  }
+
   return (
     <div
       className="board"
@@ -68,6 +81,7 @@ function Board() {
             addTask={addTask}
             deleteTask={deleteTask}
             moveTask={moveTask}
+            editTask={editTask}
           />
         );
       })}

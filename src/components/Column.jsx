@@ -1,7 +1,7 @@
     import { useState } from "react";
     import TaskCard from "./TaskCard";
 
-    function Column({ id, title, tasks, addTask, deleteTask, moveTask }) {
+    function Column({ id, title, tasks, addTask, deleteTask, moveTask, editTask}) {
       const [newTaskTitle, setNewTaskTitle] = useState("");
 
       return (
@@ -18,7 +18,7 @@
 
           <div className="task-list">
             {tasks.map((task) => (
-              <TaskCard key={task.id} id={task.id} title={task.title} deleteTask={deleteTask} moveTask={moveTask}/>
+              <TaskCard key={task.id} id={task.id} title={task.title} deleteTask={deleteTask} moveTask={moveTask} editTask={editTask}/>
             ))}
           </div>
 
