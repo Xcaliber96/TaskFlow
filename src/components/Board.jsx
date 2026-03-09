@@ -1,5 +1,7 @@
 import Column from "./Column";
 import { useState, useEffect, use } from "react";
+import { DndContext } from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 
 
 function Board() {
@@ -63,28 +65,61 @@ function Board() {
     });
     setTasks(updatedTasks);
   }
-
+  function handleDragEnd(event) {
+    const { active, over } = event;
+  
+    if (!over) return;
+  
+    const activeId = active.id;
+    const overId = over.id;
+  
+    const activeTaskId = parseInt(activeId.replace("task-", ""));
+  
+    // Case 1: Dropped on another task (reorder)
+    if (overId.startsWith("task-")) {
+      const oldIndex = tasks.findIndex(task => `task-${task.id}` === activeId);
+      const newIndex = tasks.findIndex(task => `task-${task.id}` === overId);
+  
+      if (oldIndex !== newIndex) {
+        setTasks(arrayMove(tasks, oldIndex, newIndex));
+      }
+  
+      return;
+    }
+  
+    if (overId.startsWith("column-")) {
+      const newColumnId = parseInt(overId.replace("column-", ""));
+  
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === activeTaskId
+            ? { ...task, columnId: newColumnId }
+            : task
+        )
+      );
+    }
+  }
   return (
     <div
       className="board"
       style={{ display: "flex", gap: "50px", padding: "35px" }}
     >
-      {columns.map((column) => {
-        const columnTasks = tasks.filter((task) => task.columnId === column.id);
-
-        return (
-          <Column
-            key={column.id}
-            id={column.id}
-            title={column.title}
-            tasks={columnTasks}
-            addTask={addTask}
-            deleteTask={deleteTask}
-            moveTask={moveTask}
-            editTask={editTask}
-          />
-        );
-      })}
+      <DndContext onDragEnd={handleDragEnd}>
+        <div style={{ display: "flex", gap: "20px" }}>
+          {columns.map((column) => (
+            <Column
+              key={column.id}
+              id={column.id}
+              title={column.title}
+              tasks={tasks.filter((task) => task.columnId === column.id)}
+              addTask={addTask}
+              deleteTask={deleteTask}
+              moveTask={moveTask}
+              editTask={editTask}
+            />
+          ))}
+        </div>
+      </DndContext>
     </div>
   );
 }

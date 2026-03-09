@@ -1,8 +1,13 @@
     import { useState } from "react";
     import TaskCard from "./TaskCard";
+    import { useDroppable } from "@dnd-kit/core";
+    import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
     function Column({ id, title, tasks, addTask, deleteTask, moveTask, editTask}) {
       const [newTaskTitle, setNewTaskTitle] = useState("");
+      const { setNodeRef } = useDroppable({
+        id: `column-${id}`,
+      });
 
       return (
         <div
@@ -13,14 +18,20 @@
             width: "200px",
             minHeight: "200px"
           }}
+          ref={setNodeRef}
         >
           <h2>{title}</h2>
-
+          
+          <SortableContext
+            items={tasks.map(task => `task-${task.id}`)}
+            strategy={verticalListSortingStrategy}
+          >
           <div className="task-list">
             {tasks.map((task) => (
               <TaskCard key={task.id} id={task.id} title={task.title} deleteTask={deleteTask} moveTask={moveTask} editTask={editTask}/>
             ))}
           </div>
+          </SortableContext>
 
           <input
             type="text"
