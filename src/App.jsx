@@ -1,10 +1,11 @@
 import Board from "./components/Board";
+import { TaskProvider } from "./context/TaskContext";
 
 function App() {
   return (
-    <div>
+    <TaskProvider>
       <Board />
-    </div>
+    </TaskProvider>
   );
 }
 
