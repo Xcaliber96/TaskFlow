@@ -17,21 +17,24 @@ function Board() {
     const savedTasks = localStorage.getItem("tasks");
     return savedTasks ? JSON.parse(savedTasks)
       : [
-          { id: 1, title: "Learn React", columnId: 1 },
-          { id: 2, title: "Build Kanban", columnId: 1 },
-          { id: 3, title: "Push to GitHub", columnId: 2 },
-        ];
+        { id: 1, title: "Learn React", columnId: 1, priority: "Low" },
+        { id: 2, title: "Build Kanban", columnId: 1, priority: "Medium" },
+        { id: 3, title: "Push to GitHub", columnId: 2, priority: "High" },
+      ];
   });
 
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
+
+
   function addTask(columnId, title) {
     if (!title.trim()) return;
     const newTask = {
       id: Date.now(),
       title,
       columnId,
+      priority: "",
     };
 
     setTasks([...tasks, newTask]);
@@ -75,7 +78,6 @@ function Board() {
   
     const activeTaskId = parseInt(activeId.replace("task-", ""));
   
-    // Case 1: Dropped on another task (reorder)
     if (overId.startsWith("task-")) {
       const oldIndex = tasks.findIndex(task => `task-${task.id}` === activeId);
       const newIndex = tasks.findIndex(task => `task-${task.id}` === overId);
@@ -99,6 +101,19 @@ function Board() {
       );
     }
   }
+
+  function updatePriority(taskId, newPriority) {
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          priority: newPriority,
+        };
+      }
+      return task;
+    });
+    setTasks(updatedTasks);
+  }
   return (
     <div
       className="board"
@@ -116,6 +131,7 @@ function Board() {
               deleteTask={deleteTask}
               moveTask={moveTask}
               editTask={editTask}
+              updatePriority={updatePriority}
             />
           ))}
         </div>

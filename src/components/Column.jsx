@@ -3,7 +3,7 @@
     import { useDroppable } from "@dnd-kit/core";
     import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
-    function Column({ id, title, tasks, addTask, deleteTask, moveTask, editTask}) {
+    function Column({ id, title, tasks, addTask, deleteTask, moveTask, editTask, updatePriority}) {
       const [newTaskTitle, setNewTaskTitle] = useState("");
       const { setNodeRef } = useDroppable({
         id: `column-${id}`,
@@ -28,7 +28,7 @@
           >
           <div className="task-list">
             {tasks.map((task) => (
-              <TaskCard key={task.id} id={task.id} title={task.title} deleteTask={deleteTask} moveTask={moveTask} editTask={editTask}/>
+              <TaskCard key={task.id} id={task.id} title={task.title} priority={task.priority} deleteTask={deleteTask} moveTask={moveTask} editTask={editTask} updatePriority={updatePriority}/>
             ))}
           </div>
           </SortableContext>
