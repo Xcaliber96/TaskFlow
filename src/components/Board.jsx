@@ -186,7 +186,22 @@ function Board() {
             color: "white",
           }}
         />
-
+        {searchTasks && (
+          <button
+            onClick={() => setSearchTasks("")}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "4px",
+              background: "#4f46e5",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            Clear
+          </button>
+        
+        )}
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
@@ -219,15 +234,19 @@ function Board() {
 
             const columnTasks = tasks
               .filter((task) => task.columnId === column.id)
+              .sort((a, b) => {
+                if (!a.dueDate) return 1;
+                if (!b.dueDate) return -1;
+                return new Date(a.dueDate) - new Date(b.dueDate);
+              })
               .filter((task) =>
-                task.title.toLowerCase().includes(searchTasks.toLowerCase())
-              )
-              .filter((task) =>
-                filterPriority === "All"
-                  ? true
-                  : task.priority === filterPriority
-              );
-
+                      task.title.toLowerCase().includes(searchTasks.toLowerCase())
+                    )
+                    .filter((task) =>
+                      filterPriority === "All"
+                        ? true
+                        : task.priority === filterPriority
+                    );
             return (
               <Column
                 key={column.id}

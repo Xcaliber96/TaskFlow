@@ -46,6 +46,13 @@
               placeholder="New task title"
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  addTask(id, newTaskTitle, newDueDate);
+                  setNewTaskTitle("");
+                  setNewDueDate("");
+                }
+              }}
             />
             <input
               type="date"
