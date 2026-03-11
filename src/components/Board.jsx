@@ -10,6 +10,9 @@ function Board() {
     { id: 3, title: "Done" },
   ];
 
+  const [searchTasks, setSearchTasks] = useState("");
+  const [filterPriority, setFilterPriority] = useState("All");
+
   const [columns] = useState(initialColumns);
 
   const [tasks, setTasks] = useState(() => {
@@ -18,17 +21,16 @@ function Board() {
     return savedTasks
       ? JSON.parse(savedTasks)
       : [
-          { id: 1, title: "Learn React", columnId: 1, priority: "Low" },
-          { id: 2, title: "Build Kanban", columnId: 1, priority: "Medium" },
-          { id: 3, title: "Push to GitHub", columnId: 2, priority: "High" },
+          { id: 1, title: "Learn React", columnId: 1, priority: "Low", dueDate: "" },
+          { id: 2, title: "Build Kanban", columnId: 1, priority: "Medium", dueDate: "" },
+          { id: 3, title: "Push to GitHub", columnId: 2, priority: "High", dueDate: "" },
         ];
   });
-
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
-  function addTask(columnId, title) {
+  function addTask(columnId, title, dueDate) {
     if (!title.trim()) return;
 
     const newTask = {
@@ -36,6 +38,7 @@ function Board() {
       title,
       columnId,
       priority: "Low",
+      dueDate,
     };
 
     setTasks([...tasks, newTask]);
@@ -103,43 +106,142 @@ function Board() {
       );
     }
   }
+  const totalTasks = tasks.length;
 
+  const completedTasks = tasks.filter(
+    task => task.columnId === 3
+  ).length;
+  
+  const progressPercentage =
+    totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
   return (
-<div
-    style={{
-      minHeight: "100vh",
-      width: "100%", 
-      background: "#121212",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",   
-      paddingTop: "60px",
-      overflowX: "auto"        
-    }}
-  >
     <div
       style={{
+        minHeight: "100vh",
+        width: "100%",
+        background: "#121212",
         display: "flex",
-        gap: "40px",
-        padding: "0 20px",    
-        justifyContent: "center", 
-        width: "max-content"      
+        flexDirection: "column",
+        alignItems: "center",
+        paddingTop: "60px",
       }}
+    >
+      <div
+        style={{
+          width:"400px",
+          marginBottom: "20px",
+          
+        }}
+      >
+        <div
+          style={{
+            fontSize: "32px",
+            fontWeight: "bold",
+            color: "#4f46e5",
+            textAlign: "center",
+            marginBottom: "10px",
+          }}
+        >
+          Progress: {completedTasks} / {totalTasks} ({progressPercentage}%)
+
+        </div>
+        <div
+        style={{
+          height: "10px",
+          width: "100%",
+          backgroundColor: "#333",
+          borderRadius: "5px",
+          overflow: "hidden",
+        }}
+        >
+          <div
+            style={{
+              width: `${progressPercentage}%`,
+              height: "100%",
+              backgroundColor: "#4f46e5",
+            }}
+          />
+
+        </div>
+
+      </div>
+     
+      <div
+        style={{
+          display: "flex",
+          gap: "20px",
+          marginBottom: "30px",
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Search tasks..."
+          value={searchTasks}
+          onChange={(e) => setSearchTasks(e.target.value)}
+          style={{
+            padding: "8px",
+            borderRadius: "4px",
+            border: "1px solid #333",
+            background: "#1e1e1e",
+            color: "white",
+          }}
+        />
+
+        <select
+          value={filterPriority}
+          onChange={(e) => setFilterPriority(e.target.value)}
+          style={{
+            padding: "8px",
+            borderRadius: "4px",
+            background: "#1e1e1e",
+            color: "white",
+          }}
+        >
+          <option value="All">All Priority</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: "40px",
+          padding: "0 20px",
+          justifyContent: "flex-start",
+          width: "max-content",
+          overflowX: "auto",
+        }}
       >
         <DndContext onDragEnd={handleDragEnd}>
-          {columns.map((column) => (
-            <Column
-              key={column.id}
-              id={column.id}
-              title={column.title}
-              tasks={tasks.filter((task) => task.columnId === column.id)}
-              addTask={addTask}
-              deleteTask={deleteTask}
-              moveTask={moveTask}
-              editTask={editTask}
-              updatePriority={updatePriority}
-            />
-          ))}
+          {columns.map((column) => {
+
+            const columnTasks = tasks
+              .filter((task) => task.columnId === column.id)
+              .filter((task) =>
+                task.title.toLowerCase().includes(searchTasks.toLowerCase())
+              )
+              .filter((task) =>
+                filterPriority === "All"
+                  ? true
+                  : task.priority === filterPriority
+              );
+
+            return (
+              <Column
+                key={column.id}
+                id={column.id}
+                title={column.title}
+                tasks={columnTasks}
+                addTask={addTask}
+                deleteTask={deleteTask}
+                moveTask={moveTask}
+                editTask={editTask}
+                updatePriority={updatePriority}
+              />
+            );
+          })}
         </DndContext>
       </div>
     </div>

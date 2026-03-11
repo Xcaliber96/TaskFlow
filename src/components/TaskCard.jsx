@@ -6,9 +6,9 @@ import { TaskContext } from "../context/TaskContext";
 
 
 
-function TaskCard({ id, title, priority, moveTask, editTask, updatePriority }) {
+function TaskCard({ id, title, priority, deleteTask, moveTask, dueDate, editTask, updatePriority }){
 
-  const { deleteTask } = useContext(TaskContext);
+
 
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
@@ -25,7 +25,29 @@ function TaskCard({ id, title, priority, moveTask, editTask, updatePriority }) {
     Medium: "orange",
     High: "red",
   };
+  const isOverdue = dueDate && new Date(dueDate) < new Date().setHours(0, 0, 0, 0);  
+  const today = new Date();
+today.setHours(0,0,0,0);
 
+let dueStatus = "";
+let dueColor = "#aaa";
+
+if (dueDate) {
+  const due = new Date(dueDate);
+  due.setHours(0,0,0,0);
+
+  if (due < today) {
+    dueStatus = "Overdue";
+    dueColor = "red";
+  } else if (due.getTime() === today.getTime()) {
+    dueStatus = "Due Today";
+    dueColor = "orange";
+  } else {
+    const daysLeft = Math.ceil((due - today)/(1000*60*60*24));
+    dueStatus = `Due in ${daysLeft} days`;
+    dueColor = "green";
+  }
+}
   return (
     <div
       ref={setNodeRef}
@@ -33,7 +55,7 @@ function TaskCard({ id, title, priority, moveTask, editTask, updatePriority }) {
       {...attributes}
       style={{
         ...style,
-        border: "1px solid #333",
+        border: isOverdue ? "1px solid red" : "1px solid #333",
         borderRadius: "6px",
         padding: "12px",
         marginBottom: "8px",
@@ -45,7 +67,7 @@ function TaskCard({ id, title, priority, moveTask, editTask, updatePriority }) {
         display: "flex",
         flexDirection: "column",
         gap: "10px",
-        cursor: "grab",
+        cursor: isDragging ? "grabbing" : "grab"  ,
         transition: "all 0.15s ease"
       
       }}
@@ -90,6 +112,17 @@ function TaskCard({ id, title, priority, moveTask, editTask, updatePriority }) {
             </span>
             <span style={{ wordBreak: "break-word"}}
             >{title}</span>
+                {dueDate && (
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: dueColor,
+                      fontWeight: "500"
+                    }}
+                  >
+                   {dueStatus}
+                  </span>
+                )}
             </div>
 
             <div
