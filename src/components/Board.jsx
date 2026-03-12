@@ -1,7 +1,7 @@
 import Column from "./Column";
-import { useState, useEffect } from "react";
-import { DndContext } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
+import { useState, useEffect, useRef } from "react";
+import { DndContext, closestCorners } from "@dnd-kit/core";
+import { arrayMove, SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 
 function Board() {
   const initialColumns = [
@@ -10,14 +10,18 @@ function Board() {
     { id: 3, title: "Done" },
   ];
 
+  const searchInputRef = useRef(null);
+
   const [searchTasks, setSearchTasks] = useState("");
   const [filterPriority, setFilterPriority] = useState("All");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [columns, setColumns] = useState(initialColumns);
+  
 
-  const [columns] = useState(initialColumns);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
 
   const [tasks, setTasks] = useState(() => {
     const savedTasks = localStorage.getItem("tasks");
-
     return savedTasks
       ? JSON.parse(savedTasks)
       : [
@@ -26,13 +30,59 @@ function Board() {
           { id: 3, title: "Push to GitHub", columnId: 2, priority: "High", dueDate: "" },
         ];
   });
+
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
+ 
+  useEffect(() => {
+    function handleKeyDown(e) {
+    
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+        if (e.key === "Escape") {
+          e.target.blur();
+          setSearchTasks("");
+        }
+        return;
+      }
+
+ 
+      if (e.key === "/") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+
+
+      if (e.key === "p" || e.key === "P") {
+        e.preventDefault();
+        setIsDropdownOpen((prev) => !prev);
+      }
+
+   
+      if (e.key === "c" || e.key === "C") {
+        e.preventDefault();
+        document.getElementById("add-task-btn-1")?.click();
+      }
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (selectedTaskId) {
+          e.preventDefault();
+          deleteTask(selectedTaskId);
+        }
+      }
+      
+      if (e.key === "Escape") {
+         setSelectedTaskId(null);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [selectedTaskId]); 
+
   function addTask(columnId, title, dueDate) {
     if (!title.trim()) return;
-
     const newTask = {
       id: Date.now(),
       title,
@@ -40,229 +90,239 @@ function Board() {
       priority: "Low",
       dueDate,
     };
-
-    setTasks([...tasks, newTask]);
+    setTasks((prev) => [...prev, newTask]);
   }
 
+  
   function deleteTask(taskId) {
-    setTasks(tasks.filter((task) => task.id !== taskId));
-  }
-
-  function moveTask(taskId) {
-    const updatedTasks = tasks.map((task) =>
-      task.id === taskId
-        ? { ...task, columnId: task.columnId === 3 ? 1 : task.columnId + 1 }
-        : task
-    );
-
-    setTasks(updatedTasks);
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
+    if (selectedTaskId === taskId) setSelectedTaskId(null);
   }
 
   function editTask(taskId, newTitle) {
-    const updatedTasks = tasks.map((task) =>
+    setTasks((prev) => prev.map((task) =>
       task.id === taskId ? { ...task, title: newTitle } : task
-    );
-
-    setTasks(updatedTasks);
+    ));
   }
 
   function updatePriority(taskId, newPriority) {
-    const updatedTasks = tasks.map((task) =>
+    setTasks((prev) => prev.map((task) =>
       task.id === taskId ? { ...task, priority: newPriority } : task
-    );
+    ));
+  }
 
-    setTasks(updatedTasks);
+  function handleDragOver(event) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    if (activeId === overId) return;
+
+    const isActiveTask = activeId.startsWith("task-");
+    const isOverTask = overId.startsWith("task-");
+    const isOverColumn = overId.startsWith("column-");
+
+    if (!isActiveTask) return;
+
+    const activeTaskId = parseInt(activeId.replace("task-", ""));
+
+    setTasks((prevTasks) => {
+      const activeIndex = prevTasks.findIndex((t) => t.id === activeTaskId);
+      if (activeIndex === -1) return prevTasks;
+      const activeTask = prevTasks[activeIndex];
+
+      if (isOverTask) {
+        const overTaskId = parseInt(overId.replace("task-", ""));
+        const overIndex = prevTasks.findIndex((t) => t.id === overTaskId);
+        if (overIndex === -1) return prevTasks;
+        
+        const overTask = prevTasks[overIndex];
+
+        if (activeTask.columnId !== overTask.columnId) {
+          const newTasks = [...prevTasks];
+          newTasks[activeIndex] = { ...activeTask, columnId: overTask.columnId };
+          return arrayMove(newTasks, activeIndex, overIndex);
+        }
+      }
+
+      if (isOverColumn) {
+        const overColumnId = parseInt(overId.replace("column-", ""));
+        if (activeTask.columnId !== overColumnId) {
+          const newTasks = [...prevTasks];
+          newTasks[activeIndex] = { ...activeTask, columnId: overColumnId };
+          return newTasks;
+        }
+      }
+
+      return prevTasks;
+    });
   }
 
   function handleDragEnd(event) {
     const { active, over } = event;
     if (!over) return;
 
-    const activeId = active.id;
-    const overId = over.id;
+    const activeId = String(active.id);
+    const overId = String(over.id);
 
-    const activeTaskId = parseInt(activeId.replace("task-", ""));
-
-    if (overId.startsWith("task-")) {
-      const oldIndex = tasks.findIndex((task) => `task-${task.id}` === activeId);
-      const newIndex = tasks.findIndex((task) => `task-${task.id}` === overId);
-
-      if (oldIndex !== newIndex) {
-        setTasks(arrayMove(tasks, oldIndex, newIndex));
+    if (activeId.startsWith("column-") && overId.startsWith("column-")) {
+      if (activeId !== overId) {
+        setColumns((prevColumns) => {
+          const oldIndex = prevColumns.findIndex((col) => `column-${col.id}` === activeId);
+          const newIndex = prevColumns.findIndex((col) => `column-${col.id}` === overId);
+          return arrayMove(prevColumns, oldIndex, newIndex);
+        });
       }
-
       return;
     }
 
-    if (overId.startsWith("column-")) {
-      const newColumnId = parseInt(overId.replace("column-", ""));
+    if (activeId !== overId && activeId.startsWith("task-") && overId.startsWith("task-")) {
+      const activeTaskId = parseInt(activeId.replace("task-", ""));
+      const overTaskId = parseInt(overId.replace("task-", ""));
 
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === activeTaskId
-            ? { ...task, columnId: newColumnId }
-            : task
-        )
-      );
+      setTasks((tasks) => {
+        const oldIndex = tasks.findIndex((t) => t.id === activeTaskId);
+        const newIndex = tasks.findIndex((t) => t.id === overTaskId);
+        return arrayMove(tasks, oldIndex, newIndex);
+      });
     }
   }
+
   const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((task) => task.columnId === 3).length;
+  const progressPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
-  const completedTasks = tasks.filter(
-    task => task.columnId === 3
-  ).length;
-  
-  const progressPercentage =
-    totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        width: "100%",
-        background: "#121212",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        paddingTop: "60px",
-      }}
-    >
-      <div
-        style={{
-          width:"400px",
-          marginBottom: "20px",
-          
-        }}
-      >
-        <div
-          style={{
-            fontSize: "32px",
-            fontWeight: "bold",
-            color: "#4f46e5",
-            textAlign: "center",
-            marginBottom: "10px",
-          }}
-        >
-          Progress: {completedTasks} / {totalTasks} ({progressPercentage}%)
-
-        </div>
-        <div
-        style={{
-          height: "10px",
-          width: "100%",
-          backgroundColor: "#333",
-          borderRadius: "5px",
-          overflow: "hidden",
-        }}
-        >
-          <div
-            style={{
-              width: `${progressPercentage}%`,
-              height: "100%",
-              backgroundColor: "#4f46e5",
-            }}
-          />
-
+    <div className="min-h-screen w-full bg-[#0E0F11] text-zinc-100 font-sans flex flex-col selection:bg-indigo-500/30">
+      
+      <header className="px-8 py-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#0E0F11]/80 backdrop-blur-md sticky top-0 z-10">
+        <div className="flex flex-col gap-1 w-full md:w-auto">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-medium tracking-tight">TaskFlow</h1>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/5">
+              {completedTasks} / {totalTasks} Done
+            </span>
+          </div>
+          <div className="h-1 w-full md:w-48 bg-white/5 rounded-full overflow-hidden mt-2">
+            <div
+              className="h-full bg-indigo-500 transition-all duration-500 ease-out"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
         </div>
 
-      </div>
-     
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-          marginBottom: "30px",
-        }}
-      >
-        <input
-          type="text"
-          placeholder="Search tasks..."
-          value={searchTasks}
-          onChange={(e) => setSearchTasks(e.target.value)}
-          style={{
-            padding: "8px",
-            borderRadius: "4px",
-            border: "1px solid #333",
-            background: "#1e1e1e",
-            color: "white",
-          }}
-        />
-        {searchTasks && (
-          <button
-            onClick={() => setSearchTasks("")}
-            style={{
-              padding: "8px 12px",
-              borderRadius: "4px",
-              background: "#4f46e5",
-              color: "white",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            Clear
-          </button>
-        
-        )}
-        <select
-          value={filterPriority}
-          onChange={(e) => setFilterPriority(e.target.value)}
-          style={{
-            padding: "8px",
-            borderRadius: "4px",
-            background: "#1e1e1e",
-            color: "white",
-          }}
-        >
-          <option value="All">All Priority</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-      </div>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative group flex items-center">
+            <input
+              ref={searchInputRef}
+              placeholder="Search tasks..."
+              value={searchTasks}
+              onChange={(e) => setSearchTasks(e.target.value)}
+              className="w-full md:w-64 px-3 py-1.5 text-sm bg-white/5 border border-white/5 rounded-md text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-white/20 transition-colors"
+            />
+            {!searchTasks && (
+              <span className="absolute right-3 text-[10px] text-zinc-600 font-mono pointer-events-none border border-white/10 px-1.5 rounded">
+                /
+              </span>
+            )}
+            {searchTasks && (
+              <button
+                onClick={() => setSearchTasks("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 text-xs"
+              >
+                Clear
+              </button>
+            )}
+          </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "40px",
-          padding: "0 20px",
-          justifyContent: "flex-start",
-          width: "max-content",
-          overflowX: "auto",
-        }}
-      >
-        <DndContext onDragEnd={handleDragEnd}>
-          {columns.map((column) => {
+          <div className="relative">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="px-3 py-1.5 text-sm bg-white/5 border border-white/5 rounded-md text-zinc-200 hover:bg-white/10 focus:outline-none focus:border-white/20 transition-colors cursor-pointer flex items-center gap-2 w-36 justify-between"
+            >
+              <div className="flex items-center gap-2">
+                {filterPriority === "All" ? "All Priorities" : filterPriority}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-zinc-600 font-mono border border-white/10 px-1 rounded hidden md:block">
+                  P
+                </span>
+                <svg className={`w-3 h-3 opacity-50 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </button>
 
-            const columnTasks = tasks
-              .filter((task) => task.columnId === column.id)
-              .sort((a, b) => {
-                if (!a.dueDate) return 1;
-                if (!b.dueDate) return -1;
-                return new Date(a.dueDate) - new Date(b.dueDate);
-              })
-              .filter((task) =>
-                      task.title.toLowerCase().includes(searchTasks.toLowerCase())
-                    )
-                    .filter((task) =>
-                      filterPriority === "All"
-                        ? true
-                        : task.priority === filterPriority
-                    );
-            return (
-              <Column
-                key={column.id}
-                id={column.id}
-                title={column.title}
-                tasks={columnTasks}
-                addTask={addTask}
-                deleteTask={deleteTask}
-                moveTask={moveTask}
-                editTask={editTask}
-                updatePriority={updatePriority}
-              />
-            );
-          })}
-        </DndContext>
-      </div>
+            {isDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />
+                <div className="absolute right-0 mt-2 w-36 bg-[#1A1C20] border border-white/10 rounded-md shadow-xl shadow-black/50 z-20 py-1 overflow-hidden origin-top-right animate-in fade-in slide-in-from-top-2 duration-200">
+                  {["All", "High", "Medium", "Low"].map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => {
+                        setFilterPriority(level);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 text-sm transition-colors flex items-center gap-2 ${
+                        filterPriority === level ? "bg-indigo-500/10 text-indigo-400" : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                      }`}
+                    >
+                      {filterPriority === level ? (
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                      ) : (
+                        <span className="w-3 h-3" /> 
+                      )}
+                      {level === "All" ? "All Priorities" : level}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      
+      <main 
+        className="flex-1 overflow-x-auto p-8"
+        onClick={() => setSelectedTaskId(null)}
+      >
+        <div className="flex gap-6 items-start w-max">
+          <DndContext collisionDetection={closestCorners} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+            <SortableContext items={columns.map((col) => `column-${col.id}`)} strategy={horizontalListSortingStrategy}>
+              {columns.map((column) => {
+                const columnTasks = tasks
+                  .filter((task) => task.columnId === column.id)
+                  .sort((a, b) => {
+                    if (!a.dueDate) return 1;
+                    if (!b.dueDate) return -1;
+                    return new Date(a.dueDate) - new Date(b.dueDate);
+                  })
+                  .filter((task) => task.title.toLowerCase().includes(searchTasks.toLowerCase()))
+                  .filter((task) => (filterPriority === "All" ? true : task.priority === filterPriority));
+
+                return (
+                  <Column
+                    key={column.id}
+                    id={column.id}
+                    title={column.title}
+                    tasks={columnTasks}
+                    addTask={addTask}
+                    deleteTask={deleteTask}
+                    editTask={editTask}
+                    updatePriority={updatePriority}
+                    selectedTaskId={selectedTaskId}       
+                    setSelectedTaskId={setSelectedTaskId}
+                  />
+                );
+              })}
+            </SortableContext>
+          </DndContext>
+        </div>
+      </main>
     </div>
   );
 }
