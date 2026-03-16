@@ -1,3 +1,4 @@
+
 import Column from "./Column";
 import { useState, useEffect, useRef } from "react";
 import { DndContext, closestCorners } from "@dnd-kit/core";
@@ -195,134 +196,85 @@ function Board() {
   const progressPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
   return (
-    <div className="min-h-screen w-full bg-[#0E0F11] text-zinc-100 font-sans flex flex-col selection:bg-indigo-500/30">
-      
-      <header className="px-8 py-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#0E0F11]/80 backdrop-blur-md sticky top-0 z-10">
-        <div className="flex flex-col gap-1 w-full md:w-auto">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-medium tracking-tight">TaskFlow</h1>
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/5">
-              {completedTasks} / {totalTasks} Done
-            </span>
-          </div>
-          <div className="h-1 w-full md:w-48 bg-white/5 rounded-full overflow-hidden mt-2">
-            <div
-              className="h-full bg-indigo-500 transition-all duration-500 ease-out"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-        </div>
+    <div className="flex min-h-screen bg-[#0E0F11] text-zinc-100 font-sans">
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative group flex items-center">
-            <input
-              ref={searchInputRef}
-              placeholder="Search tasks..."
-              value={searchTasks}
-              onChange={(e) => setSearchTasks(e.target.value)}
-              className="w-full md:w-64 px-3 py-1.5 text-sm bg-white/5 border border-white/5 rounded-md text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-white/20 transition-colors"
-            />
-            {!searchTasks && (
-              <span className="absolute right-3 text-[10px] text-zinc-600 font-mono pointer-events-none border border-white/10 px-1.5 rounded">
-                /
+  
+      <div className="flex-1 flex flex-col">
+  
+        <header className="px-8 py-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#0E0F11]/80 backdrop-blur-md sticky top-0 z-10">
+  
+          <div className="flex flex-col gap-1 w-full md:w-auto">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-medium tracking-tight">TaskFlow</h1>
+  
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/5">
+                {completedTasks} / {totalTasks} Done
               </span>
-            )}
-            {searchTasks && (
-              <button
-                onClick={() => setSearchTasks("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 text-xs"
-              >
-                Clear
-              </button>
-            )}
+            </div>
+  
+            <div className="h-1 w-full md:w-48 bg-white/5 rounded-full overflow-hidden mt-2">
+              <div
+                className="h-full bg-indigo-500 transition-all duration-500 ease-out"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
           </div>
-
-          <div className="relative">
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="px-3 py-1.5 text-sm bg-white/5 border border-white/5 rounded-md text-zinc-200 hover:bg-white/10 focus:outline-none focus:border-white/20 transition-colors cursor-pointer flex items-center gap-2 w-36 justify-between"
+  
+        </header>
+  
+        <main
+          className="flex-1 overflow-x-auto p-8"
+          onClick={() => setSelectedTaskId(null)}
+        >
+  
+          <div className="flex gap-6 items-start w-max">
+  
+            <DndContext
+              collisionDetection={closestCorners}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
             >
-              <div className="flex items-center gap-2">
-                {filterPriority === "All" ? "All Priorities" : filterPriority}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-zinc-600 font-mono border border-white/10 px-1 rounded hidden md:block">
-                  P
-                </span>
-                <svg className={`w-3 h-3 opacity-50 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </button>
-
-            {isDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />
-                <div className="absolute right-0 mt-2 w-36 bg-[#1A1C20] border border-white/10 rounded-md shadow-xl shadow-black/50 z-20 py-1 overflow-hidden origin-top-right animate-in fade-in slide-in-from-top-2 duration-200">
-                  {["All", "High", "Medium", "Low"].map((level) => (
-                    <button
-                      key={level}
-                      onClick={() => {
-                        setFilterPriority(level);
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-sm transition-colors flex items-center gap-2 ${
-                        filterPriority === level ? "bg-indigo-500/10 text-indigo-400" : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
-                      }`}
-                    >
-                      {filterPriority === level ? (
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                      ) : (
-                        <span className="w-3 h-3" /> 
-                      )}
-                      {level === "All" ? "All Priorities" : level}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+  
+              <SortableContext
+                items={columns.map((col) => `column-${col.id}`)}
+                strategy={horizontalListSortingStrategy}
+              >
+  
+                {columns.map((column) => {
+                  const columnTasks = tasks
+                    .filter((task) => task.columnId === column.id)
+                    .sort((a, b) => {
+                      if (!a.dueDate) return 1;
+                      if (!b.dueDate) return -1;
+                      return new Date(a.dueDate) - new Date(b.dueDate);
+                    });
+  
+                  return (
+                    <Column
+                      key={column.id}
+                      id={column.id}
+                      title={column.title}
+                      tasks={columnTasks}
+                      addTask={addTask}
+                      deleteTask={deleteTask}
+                      editTask={editTask}
+                      updatePriority={updatePriority}
+                      selectedTaskId={selectedTaskId}
+                      setSelectedTaskId={setSelectedTaskId}
+                    />
+                  );
+                })}
+  
+              </SortableContext>
+  
+            </DndContext>
+  
           </div>
-        </div>
-      </header>
-
-      
-      <main 
-        className="flex-1 overflow-x-auto p-8"
-        onClick={() => setSelectedTaskId(null)}
-      >
-        <div className="flex gap-6 items-start w-max">
-          <DndContext collisionDetection={closestCorners} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-            <SortableContext items={columns.map((col) => `column-${col.id}`)} strategy={horizontalListSortingStrategy}>
-              {columns.map((column) => {
-                const columnTasks = tasks
-                  .filter((task) => task.columnId === column.id)
-                  .sort((a, b) => {
-                    if (!a.dueDate) return 1;
-                    if (!b.dueDate) return -1;
-                    return new Date(a.dueDate) - new Date(b.dueDate);
-                  })
-                  .filter((task) => task.title.toLowerCase().includes(searchTasks.toLowerCase()))
-                  .filter((task) => (filterPriority === "All" ? true : task.priority === filterPriority));
-
-                return (
-                  <Column
-                    key={column.id}
-                    id={column.id}
-                    title={column.title}
-                    tasks={columnTasks}
-                    addTask={addTask}
-                    deleteTask={deleteTask}
-                    editTask={editTask}
-                    updatePriority={updatePriority}
-                    selectedTaskId={selectedTaskId}       
-                    setSelectedTaskId={setSelectedTaskId}
-                  />
-                );
-              })}
-            </SortableContext>
-          </DndContext>
-        </div>
-      </main>
+  
+        </main>
+  
+      </div>
+  
     </div>
   );
 }
