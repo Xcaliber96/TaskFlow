@@ -174,7 +174,7 @@ function Board({activeProjects, tasks, setTasks}) {
       });
     }
   }
-
+  
  const currentProjectTasks = tasks.filter((task) => task.project === activeProjects || !task.project);
  const totalTasks = currentProjectTasks.length;
  const completedTasks = currentProjectTasks.filter((task) => task.columnId === 3).length;
