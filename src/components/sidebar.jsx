@@ -1,4 +1,4 @@
-function Sidebar({activeProjects, setactiveProjects}) {
+function Sidebar({activeProjects, setactiveProjects, currentView, setCurrentView}) {
     const projects = ["Taskflow", "Portfolio", "Research"];
     return (
         <div className="w-64 min-h-screen bg-[#0E0F11] border-r border-white/5 p-4">
@@ -10,7 +10,24 @@ function Sidebar({activeProjects, setactiveProjects}) {
             Personal
           </div>
         </div>
-  
+
+        <div className="mb-6">
+        <p className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase mb-2 px-2">Views</p>
+        <div className="flex flex-col gap-0.5">
+          <button
+            onClick={() => setCurrentView("board")}
+            className={`text-sm px-2 py-1.5 rounded text-left transition-colors flex items-center gap-2 ${currentView === "board" ? "bg-indigo-500/10 text-indigo-400 font-medium" : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"}`}
+          >
+            Kanban Board
+          </button>
+          <button
+            onClick={() => setCurrentView("analytics")}
+            className={`text-sm px-2 py-1.5 rounded text-left transition-colors flex items-center gap-2 ${currentView === "analytics" ? "bg-indigo-500/10 text-indigo-400 font-medium" : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"}`}
+          >
+            Analytics
+          </button>
+        </div>
+      </div>
         {/* Projects */}
       <div>
         <p className="text-[]text-[10px] font-semibold tracking-wider text-zinc-500 uppercase mb-2 px-2">Projects</p>

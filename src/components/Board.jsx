@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { DndContext, closestCorners } from "@dnd-kit/core";
 import { arrayMove, SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 
-function Board() {
+function Board({activeProjects, tasks, setTasks}) {
   const initialColumns = [
     { id: 1, title: "To Do" },
     { id: 2, title: "In Progress" },
@@ -16,25 +16,8 @@ function Board() {
   const [searchTasks, setSearchTasks] = useState("");
   const [filterPriority, setFilterPriority] = useState("All");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [columns, setColumns] = useState(initialColumns);
-  
-
+  const [columns, setColumns] = useState(initialColumns); 
   const [selectedTaskId, setSelectedTaskId] = useState(null);
-
-  const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem("tasks");
-    return savedTasks
-      ? JSON.parse(savedTasks)
-      : [
-          { id: 1, title: "Learn React", columnId: 1, priority: "Low", dueDate: "" },
-          { id: 2, title: "Build Kanban", columnId: 1, priority: "Medium", dueDate: "" },
-          { id: 3, title: "Push to GitHub", columnId: 2, priority: "High", dueDate: "" },
-        ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
 
  
   useEffect(() => {
@@ -90,6 +73,7 @@ function Board() {
       columnId,
       priority: "Low",
       dueDate,
+      project: activeProjects,
     };
     setTasks((prev) => [...prev, newTask]);
   }
@@ -191,9 +175,10 @@ function Board() {
     }
   }
 
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((task) => task.columnId === 3).length;
-  const progressPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+ const currentProjectTasks = tasks.filter((task) => task.project === activeProjects || !task.project);
+ const totalTasks = currentProjectTasks.length;
+ const completedTasks = currentProjectTasks.filter((task) => task.columnId === 3).length;
+ const progressPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
   return (
     <div className="flex min-h-screen bg-[#0E0F11] text-zinc-100 font-sans">
@@ -243,12 +228,15 @@ function Board() {
                 {columns.map((column) => {
                   const columnTasks = tasks
                     .filter((task) => task.columnId === column.id)
+                    .filter((task) => task.project === activeProjects || !task.project)
+                    .filter((task) => task.title.toLowerCase().includes(searchTasks.toLowerCase()))
+                    .filter((task) => (filterPriority === "All" ? true : task.priority === filterPriority))
                     .sort((a, b) => {
                       if (!a.dueDate) return 1;
                       if (!b.dueDate) return -1;
                       return new Date(a.dueDate) - new Date(b.dueDate);
                     });
-  
+                  
                   return (
                     <Column
                       key={column.id}
