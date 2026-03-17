@@ -7,8 +7,7 @@
 
 TaskFlow is a production-grade, full-stack Kanban task manager inspired by modern SaaS applications like Linear and Trello. It features a sleek dark-mode UI, complex drag-and-drop interactions, isolated project workspaces, and a high-performance REST API powered by Python and FastAPI.
 
-![TaskFlow Screenshot](C:\taskflow\Screenshot 2026-03-17 113525.png) 
-*(Replace with a screenshot of your board)*
+
 
 ## ✨ Key Features
 
