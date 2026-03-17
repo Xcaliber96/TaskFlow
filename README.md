@@ -1,10 +1,16 @@
-#  TaskFlow
+# TaskFlow
 
-TaskFlow is a production-grade, full-stack Kanban task manager inspired by modern SaaS applications like Linear and Trello. It features a sleek dark-mode UI, complex drag-and-drop interactions, isolated project workspaces, and a high-performance REST API.
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-F6C31C?style=for-the-badge)
 
-![TaskFlow Screenshot](./placeholder-for-your-screenshot.png) *(Replace with a screenshot of your board)*
+TaskFlow is a production-grade, full-stack Kanban task manager inspired by modern SaaS applications like Linear and Trello. It features a sleek dark-mode UI, complex drag-and-drop interactions, isolated project workspaces, and a high-performance REST API powered by Python and FastAPI.
 
-##  Key Features
+![TaskFlow Screenshot](./placeholder-for-your-screenshot.png) 
+*(Replace with a screenshot of your board)*
+
+## ✨ Key Features
 
 ### Frontend (React / UI)
 * **Advanced Drag & Drop:** Seamlessly reorder tasks within columns or move them across columns using `@dnd-kit`.
@@ -19,14 +25,14 @@ TaskFlow is a production-grade, full-stack Kanban task manager inspired by moder
   * `Escape` : Clear selections and close menus
 * **Premium UI/UX:** Built with Tailwind CSS, featuring custom animated dropdowns, color-coded priority pill badges, and smooth hover states.
 
-### Backend (FastAPI - *In Progress*)
+### Backend (FastAPI - In Progress)
 * **RESTful API:** Lightning-fast endpoints built with Python and FastAPI.
-* **Relational Database:** SQLAlchemy ORM managing SQLite (Development) / PostgreSQL (Production).
+* **Relational Database:** SQLite for development, scaling to PostgreSQL for production.
 * **Data Integrity:** Pydantic models for strict type-checking and request validation.
 
 ---
 
-##  Tech Stack
+## 🛠️ Tech Stack
 
 **Frontend:**
 * React 18 (Vite)
@@ -37,64 +43,15 @@ TaskFlow is a production-grade, full-stack Kanban task manager inspired by moder
 **Backend:**
 * Python 3.10+
 * FastAPI
+* SQLite / PostgreSQL
 * SQLAlchemy & Pydantic
 * Uvicorn (ASGI Server)
 
 ---
 
-##  Getting Started (Local Development)
+## 🚀 Getting Started (Local Development)
 
 ### 1. Clone the Repository
-\`\`\`bash
-git clone https://github.com/yourusername/taskflow.git
+```bash
+git clone [https://github.com/yourusername/taskflow.git](https://github.com/yourusername/taskflow.git)
 cd taskflow
-\`\`\`
-
-### 2. Frontend Setup
-Navigate to the frontend directory, install dependencies, and start the Vite development server.
-\`\`\`bash
-# Install dependencies
-npm install
-
-# Start the frontend dev server
-npm run dev
-\`\`\`
-The frontend will be running at `http://localhost:5173`.
-
-### 3. Backend Setup
-*(Ensure you have Python installed)*. Navigate to the backend directory, set up your virtual environment, and start the FastAPI server.
-\`\`\`bash
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-
-# Install requirements
-pip install -r requirements.txt
-
-# Run the Uvicorn server
-uvicorn main:app --reload
-\`\`\`
-The backend API will be running at `http://localhost:8000`. 
-Interactive API documentation (Swagger UI) is available at `http://localhost:8000/docs`.
-
----
-
-##  Planned API Architecture
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/projects` | Fetch all workspaces/projects |
-| `GET` | `/api/tasks/{project_id}` | Fetch all tasks for a specific project |
-| `POST` | `/api/tasks` | Create a new task |
-| `PUT` | `/api/tasks/{task_id}` | Update task details (title, priority, due date) |
-| `PATCH`| `/api/tasks/{task_id}/move`| Update a task's column status (drag-and-drop) |
-| `DELETE`| `/api/tasks/{task_id}` | Permanently delete a task |
-
----
-
-##  Architecture Notes
-* **State Management:** The global state (`tasks`, `activeProjects`, `currentView`, `currentFilter`) is lifted to `App.jsx` to allow seamless switching between the Kanban Board and the Analytics Dashboard without losing data or causing unnecessary re-renders.
-* **Event Propagation:** Deeply nested interactive elements (like the edit and delete buttons on a task card) utilize `e.stopPropagation()` to prevent the `dnd-kit` drag listeners from hijacking click events.
-
----
-*Designed and built by [Aaditya Meher]*
