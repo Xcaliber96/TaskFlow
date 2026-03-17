@@ -1,4 +1,4 @@
-function Sidebar({activeProjects, setactiveProjects, currentView, setCurrentView}) {
+function Sidebar({activeProjects, setactiveProjects, currentView, setCurrentView, currentFilter, setCurrentFilter}) {
     const projects = ["Taskflow", "Portfolio", "Research"];
     return (
         <div className="w-64 min-h-screen bg-[#0E0F11] border-r border-white/5 p-4">
@@ -35,7 +35,10 @@ function Sidebar({activeProjects, setactiveProjects, currentView, setCurrentView
         {projects.map((project, index) => (
             <button
             key = {project}
-            onClick = {() => setactiveProjects(project) }
+            onClick = {() => {
+                setactiveProjects(project);
+                setCurrentFilter("All");
+              }}
             className={`text-sm px-2 py-1.5 rounded text-left transition-colors flex items-center gap-2 ${
                 activeProjects === project 
                   ? "bg-white/10 text-zinc-100 font-medium" 
@@ -60,6 +63,8 @@ function Sidebar({activeProjects, setactiveProjects, currentView, setCurrentView
           {["My Tasks", "Due Today", "High Priority"].map((filter) => (
             <button 
               key={filter}
+              onClick={() => {setCurrentFilter(filter);
+               setCurrentView("board");}}
               className="text-sm text-zinc-400 hover:bg-white/5 hover:text-zinc-200 px-2 py-1.5 rounded text-left transition-colors"
             >
               {filter}

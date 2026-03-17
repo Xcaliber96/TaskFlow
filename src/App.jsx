@@ -7,6 +7,7 @@ import { TaskProvider } from "./context/TaskContext";
 function App() {
   const [activeProjects, setactiveProjects] = useState("Taskflow");
   const [currentView, setCurrentView] = useState("board");
+  const [currentFilter, setCurrentFilter] = useState("All");
 
     const [tasks, setTasks] = useState(() => {
     const savedTasks = localStorage.getItem("tasks");
@@ -32,12 +33,19 @@ function App() {
         setactiveProjects={setactiveProjects}
         currentView={currentView}
         setCurrentView={setCurrentView}
+        currentFilter={currentFilter}
+        setCurrentFilter={setCurrentFilter} 
         
         />
 
         <main className="flex-1 flex flex-col overflow-hidden">
          {currentView === "board" ? (
-          <Board activeProjects={activeProjects} tasks={tasks} setTasks={setTasks} />
+          <Board 
+              activeProjects={activeProjects} 
+              tasks={tasks} 
+              setTasks={setTasks} 
+              currentFilter={currentFilter}
+              />
          ): (
           <Analytics activeProjects={activeProjects} tasks={tasks} />
          )}

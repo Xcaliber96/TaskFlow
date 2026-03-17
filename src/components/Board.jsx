@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { DndContext, closestCorners } from "@dnd-kit/core";
 import { arrayMove, SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 
-function Board({activeProjects, tasks, setTasks}) {
+function Board({activeProjects, tasks, setTasks, currentFilter}) {
   const initialColumns = [
     { id: 1, title: "To Do" },
     { id: 2, title: "In Progress" },
@@ -229,6 +229,20 @@ function Board({activeProjects, tasks, setTasks}) {
                   const columnTasks = tasks
                     .filter((task) => task.columnId === column.id)
                     .filter((task) => task.project === activeProjects || !task.project)
+                    .filter((task) =>{
+                      if (currentFilter === "High Priority") return task.priority === "High";
+                      if (currentFilter === "Due Today") {
+                        const today = new Date();
+                        const dueDate = new Date(task.dueDate);
+                        return (
+                          dueDate.getFullYear() === today.getFullYear() &&
+                          dueDate.getMonth() === today.getMonth() &&
+                          dueDate.getDate() === today.getDate()
+                        );
+                      }
+                      return true;
+
+                    })
                     .filter((task) => task.title.toLowerCase().includes(searchTasks.toLowerCase()))
                     .filter((task) => (filterPriority === "All" ? true : task.priority === filterPriority))
                     .sort((a, b) => {
