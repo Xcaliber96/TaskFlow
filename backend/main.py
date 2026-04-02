@@ -26,6 +26,7 @@ class Task(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     status = Column(String(50), nullable=False, default="todo")
+    priority = Column(String(50), nullable=False, default="Low")
     created_at = Column(TIMESTAMP, default=datetime.datetime.utcnow)
     project = Column(String(100), nullable=False) 
 
@@ -42,7 +43,7 @@ class TaskCreate(BaseModel):
     title: str
     description: str | None = None
     status: str = "todo"
-    priority = Column(String, default="Low")
+    priority: str = "Low"
     project: str
 
 
@@ -50,6 +51,7 @@ class TaskUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     status: str | None = None
+    priority: str | None = None
 
 
 class TaskResponse(BaseModel):
@@ -57,7 +59,7 @@ class TaskResponse(BaseModel):
     title: str
     description: str | None
     status: str
-    priority = Column(String, default="Low")
+    priority: str
     project: str
 
     model_config = {
