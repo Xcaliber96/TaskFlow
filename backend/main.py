@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, TIMESTAMP
+from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, TIMESTAMP, Date
 
 
 load_dotenv()
@@ -27,8 +27,9 @@ class Task(Base):
     description = Column(Text, nullable=True)
     status = Column(String(50), nullable=False, default="todo")
     priority = Column(String(50), nullable=False, default="Low")
+    due_date = Column(Date, nullable=True)                          # NEW
     created_at = Column(TIMESTAMP, default=datetime.datetime.utcnow)
-    project = Column(String(100), nullable=False) 
+    project = Column(String(100), nullable=False)
 
 
 class OutboxEvent(Base):
@@ -39,11 +40,13 @@ class OutboxEvent(Base):
     payload = Column(Text, nullable=False)
     processed = Column(Boolean, default=False)
 
+
 class TaskCreate(BaseModel):
     title: str
     description: str | None = None
     status: str = "todo"
     priority: str = "Low"
+    due_date: str | None = None                                     # NEW (ISO date string: "2025-04-20")
     project: str
 
 
@@ -52,6 +55,7 @@ class TaskUpdate(BaseModel):
     description: str | None = None
     status: str | None = None
     priority: str | None = None
+    due_date: str | None = None                                     # NEW
 
 
 class TaskResponse(BaseModel):
@@ -60,17 +64,17 @@ class TaskResponse(BaseModel):
     description: str | None
     status: str
     priority: str
+    due_date: datetime.date | None                                  # NEW
     project: str
 
     model_config = {
         "from_attributes": True
-    
-    }  
+    }
+
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -80,12 +84,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+def parse_date(date_str: str | None) -> datetime.date | None:
+    if not date_str:
+        return None
+    try:
+        return datetime.date.fromisoformat(date_str)
+    except ValueError:
+        return None
 
 
 @app.get("/tasks/", response_model=list[TaskResponse])
@@ -101,7 +115,9 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
         title=task.title,
         description=task.description,
         status=task.status,
-        project=task.project
+        priority=task.priority,                                     # FIXED: was missing
+        due_date=parse_date(task.due_date),                        # NEW
+        project=task.project,
     )
 
     event = OutboxEvent(
@@ -109,9 +125,10 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
         payload=json.dumps({
             "title": task.title,
             "description": task.description,
-            "status": task.status
+            "status": task.status,
+            "priority": task.priority,
         }),
-        processed=False
+        processed=False,
     )
 
     db.add(db_task)
@@ -120,6 +137,7 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     db.refresh(db_task)
 
     return db_task
+
 
 @app.patch("/tasks/{task_id}", response_model=TaskResponse)
 def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
@@ -134,6 +152,10 @@ def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
         db_task.description = task.description
     if task.status is not None:
         db_task.status = task.status
+    if task.priority is not None:
+        db_task.priority = task.priority                            # FIXED: was missing
+    if task.due_date is not None:
+        db_task.due_date = parse_date(task.due_date)               # NEW
 
     event = OutboxEvent(
         event_type="task_updated",
@@ -141,17 +163,19 @@ def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
             "id": db_task.id,
             "title": db_task.title,
             "description": db_task.description,
-            "status": db_task.status
+            "status": db_task.status,
+            "priority": db_task.priority,
         }),
-        processed=False
+        processed=False,
     )
 
     db.add(event)
-    db.flush()  
+    db.flush()
     db.commit()
     db.refresh(db_task)
 
     return db_task
+
 
 @app.delete("/tasks/{task_id}")
 def delete_task(task_id: int, db: Session = Depends(get_db)):
@@ -163,7 +187,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     event = OutboxEvent(
         event_type="task_deleted",
         payload=json.dumps({"id": task_id}),
-        processed=False
+        processed=False,
     )
 
     db.delete(db_task)
